@@ -453,27 +453,155 @@ export default function QuestionRefinementEngine() {
     }
   };
 
-  const renderMessage = (message, index) => {
-    if (message.role === 'user') {
-      return (
-        <div key={index} className="flex justify-end">
-          <div className="max-w-3xl rounded-2xl px-6 py-4 bg-indigo-600 text-white">
-            <p className="whitespace-pre-wrap">{message.content}</p>
+const renderMessage = (message, index) => {
+  if (message.role === 'user') {
+    return (
+      <div key={index} className="flex justify-end">
+        <div className="max-w-3xl rounded-2xl px-6 py-4 bg-indigo-600 text-white">
+          <p className="whitespace-pre-wrap">{message.content}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const content = message.content;
+  const hasProgressCheck = content.includes('PROGRESS_CHECK');
+  const hasFinalFormulations = content.includes('FINAL_FORMULATIONS');
+
+  if (hasProgressCheck) {
+    const parts = content.split('PROGRESS_CHECK');
+    const reflection = parts[0].replace('REFLECTION:', '').trim();
+    const progressSection = parts[1].split('END_PROGRESS_CHECK')[0];
+    const nextQuestion = parts[1].split('END_PROGRESS_CHECK')[1].replace('NEXT_QUESTION:', '').trim();
+    
+    const options = progressSection.match(/Option \d+: (.*?)(?=\n|$)/g) || [];
+    const progressMatch = progressSection.match(/Progress: (.*?)(?=\n|$)/);
+    const progressText = progressMatch ? progressMatch[1] : '';
+
+    return (
+      <div key={index} className="space-y-3">
+        {reflection && (
+          <div className="flex justify-start">
+            <div className="max-w-3xl rounded-2xl px-6 py-4 bg-purple-50 text-gray-800 border border-purple-200">
+              <p className="text-sm text-purple-900 font-medium mb-1">💭 Reflection</p>
+              <p className="whitespace-pre-wrap">{reflection}</p>
+            </div>
+          </div>
+        )}
+        
+        <div className="flex justify-start">
+          <div className="max-w-3xl rounded-2xl px-6 py-5 bg-gradient-to-r from-blue-50 to-cyan-50 text-gray-800 border-2 border-blue-300 shadow-md">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-bold text-blue-900">📊 PROGRESS CHECK</p>
+              <button
+                onClick={() => setShowHistory(true)}
+                className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 flex items-center gap-1"
+              >
+                <History className="w-3 h-3" />
+                View All Questions
+              </button>
+            </div>
+            
+            <div className="space-y-3 mb-3">
+              {options.map((opt, optIdx) => {
+                const questionText = opt.replace(/Option \d+: /, '');
+                const feedbackKey = `${index}-${optIdx}`;
+                const currentFeedback = questionFeedback[feedbackKey];
+                
+                return (
+                  <div key={optIdx} className="bg-white rounded-lg p-3 border border-blue-200">
+                    <p className="text-sm font-medium text-gray-900 mb-2">{questionText}</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleQuestionFeedback(index, optIdx, 'like')}
+                        className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm transition-colors ${
+                          currentFeedback === 'like'
+                            ? 'bg-green-100 text-green-700 border-2 border-green-500'
+                            : 'bg-gray-100 text-gray-600 hover:bg-green-50'
+                        }`}
+                      >
+                        <ThumbsUp className="w-4 h-4" />
+                        Like
+                      </button>
+                      <button
+                        onClick={() => handleQuestionFeedback(index, optIdx, 'dislike')}
+                        className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm transition-colors ${
+                          currentFeedback === 'dislike'
+                            ? 'bg-red-100 text-red-700 border-2 border-red-500'
+                            : 'bg-gray-100 text-gray-600 hover:bg-red-50'
+                        }`}
+                      >
+                        <ThumbsDown className="w-4 h-4" />
+                        Dislike
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {progressText && (
+              <p className="text-sm text-blue-800 italic">{progressText}</p>
+            )}
           </div>
         </div>
-      );
-    }
+        
+        {nextQuestion && (
+          <div className="flex justify-start">
+            <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
+              <p className="text-sm text-indigo-600 font-medium mb-1">❓ Next Question</p>
+              <p className="whitespace-pre-wrap">{nextQuestion}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
-    const content = message.content;
-    const hasProgressCheck = content.includes('PROGRESS_CHECK');
-    const hasFinalFormulations = content.includes('FINAL_FORMULATIONS');
+  if (hasFinalFormulations) {
+    const parts = content.split('FINAL_FORMULATIONS');
+    const reflection = parts[0].replace('REFLECTION:', '').trim();
+    const finalSection = parts[1].split('END_FINAL_FORMULATIONS')[0];
+    const closingQuestion = parts[1].split('END_FINAL_FORMULATIONS')[1].trim();
 
-    if (hasProgressCheck) {
-      const parts = content.split('PROGRESS_CHECK');
-      const reflection = parts[0].replace('REFLECTION:', '').trim();
-      const options = (progressSection.match(/Option \d+: (.*?)(?=\n|$)/g) || []).filter(opt => opt && opt.trim());
-if (options.length === 0) {
-  // Fallback if format is wrong - just show the content
+    return (
+      <div key={index} className="space-y-3">
+        {reflection && (
+          <div className="flex justify-start">
+            <div className="max-w-3xl rounded-2xl px-6 py-4 bg-purple-50 text-gray-800 border border-purple-200">
+              <p className="text-sm text-purple-900 font-medium mb-1">💭 Reflection</p>
+              <p className="whitespace-pre-wrap">{reflection}</p>
+            </div>
+          </div>
+        )}
+        
+        <div className="flex justify-start">
+          <div className="max-w-3xl rounded-2xl px-6 py-5 bg-gradient-to-r from-green-50 to-emerald-50 text-gray-800 border-2 border-green-400 shadow-md">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-bold text-green-900">✅ FINAL FORMULATIONS</p>
+              <button
+                onClick={() => setShowHistory(true)}
+                className="text-xs bg-green-600 text-white px-3 py-1 rounded-full hover:bg-green-700 flex items-center gap-1"
+              >
+                <History className="w-3 h-3" />
+                View All Questions
+              </button>
+            </div>
+            <div className="whitespace-pre-wrap text-gray-900">{finalSection}</div>
+          </div>
+        </div>
+        
+        {closingQuestion && (
+          <div className="flex justify-start">
+            <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
+              <p className="whitespace-pre-wrap">{closingQuestion}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div key={index} className="flex justify-start">
       <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
@@ -481,143 +609,7 @@ if (options.length === 0) {
       </div>
     </div>
   );
-}
-      const nextQuestion = parts[1].split('END_PROGRESS_CHECK')[1].replace('NEXT_QUESTION:', '').trim();
-      const progressMatch = progressSection.match(/Progress: (.*?)(?=\n|$)/);
-      const progressText = progressMatch ? progressMatch[1] : '';
-
-      return (
-        <div key={index} className="space-y-3">
-          {reflection && (
-            <div className="flex justify-start">
-              <div className="max-w-3xl rounded-2xl px-6 py-4 bg-purple-50 text-gray-800 border border-purple-200">
-                <p className="text-sm text-purple-900 font-medium mb-1">💭 Reflection</p>
-                <p className="whitespace-pre-wrap">{reflection}</p>
-              </div>
-            </div>
-          )}
-          
-          <div className="flex justify-start">
-            <div className="max-w-3xl rounded-2xl px-6 py-5 bg-gradient-to-r from-blue-50 to-cyan-50 text-gray-800 border-2 border-blue-300 shadow-md">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-bold text-blue-900">📊 PROGRESS CHECK</p>
-                <button
-                  onClick={() => setShowHistory(true)}
-                  className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 flex items-center gap-1"
-                >
-                  <History className="w-3 h-3" />
-                  View All Questions
-                </button>
-              </div>
-              
-              <div className="space-y-3 mb-3">
-                {options.map((opt, optIdx) => {
-                  const questionText = opt.replace(/Option \d+: /, '');
-                  const feedbackKey = `${index}-${optIdx}`;
-                  const currentFeedback = questionFeedback[feedbackKey];
-                  
-                  return (
-                    <div key={optIdx} className="bg-white rounded-lg p-3 border border-blue-200">
-                      <p className="text-sm font-medium text-gray-900 mb-2">{questionText}</p>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleQuestionFeedback(index, optIdx, 'like')}
-                          className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm transition-colors ${
-                            currentFeedback === 'like'
-                              ? 'bg-green-100 text-green-700 border-2 border-green-500'
-                              : 'bg-gray-100 text-gray-600 hover:bg-green-50'
-                          }`}
-                        >
-                          <ThumbsUp className="w-4 h-4" />
-                          Like
-                        </button>
-                        <button
-                          onClick={() => handleQuestionFeedback(index, optIdx, 'dislike')}
-                          className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm transition-colors ${
-                            currentFeedback === 'dislike'
-                              ? 'bg-red-100 text-red-700 border-2 border-red-500'
-                              : 'bg-gray-100 text-gray-600 hover:bg-red-50'
-                          }`}
-                        >
-                          <ThumbsDown className="w-4 h-4" />
-                          Dislike
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              
-              {progressText && (
-                <p className="text-sm text-blue-800 italic">{progressText}</p>
-              )}
-            </div>
-          </div>
-          
-          {nextQuestion && (
-            <div className="flex justify-start">
-              <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
-                <p className="text-sm text-indigo-600 font-medium mb-1">❓ Next Question</p>
-                <p className="whitespace-pre-wrap">{nextQuestion}</p>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    if (hasFinalFormulations) {
-      const parts = content.split('FINAL_FORMULATIONS');
-      const reflection = parts[0].replace('REFLECTION:', '').trim();
-      const finalSection = parts[1].split('END_FINAL_FORMULATIONS')[0];
-      const closingQuestion = parts[1].split('END_FINAL_FORMULATIONS')[1].trim();
-
-      return (
-        <div key={index} className="space-y-3">
-          {reflection && (
-            <div className="flex justify-start">
-              <div className="max-w-3xl rounded-2xl px-6 py-4 bg-purple-50 text-gray-800 border border-purple-200">
-                <p className="text-sm text-purple-900 font-medium mb-1">💭 Reflection</p>
-                <p className="whitespace-pre-wrap">{reflection}</p>
-              </div>
-            </div>
-          )}
-          
-          <div className="flex justify-start">
-            <div className="max-w-3xl rounded-2xl px-6 py-5 bg-gradient-to-r from-green-50 to-emerald-50 text-gray-800 border-2 border-green-400 shadow-md">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-bold text-green-900">✅ FINAL FORMULATIONS</p>
-                <button
-                  onClick={() => setShowHistory(true)}
-                  className="text-xs bg-green-600 text-white px-3 py-1 rounded-full hover:bg-green-700 flex items-center gap-1"
-                >
-                  <History className="w-3 h-3" />
-                  View All Questions
-                </button>
-              </div>
-              <div className="whitespace-pre-wrap text-gray-900">{finalSection}</div>
-            </div>
-          </div>
-          
-          {closingQuestion && (
-            <div className="flex justify-start">
-              <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
-                <p className="whitespace-pre-wrap">{closingQuestion}</p>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <div key={index} className="flex justify-start">
-        <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
-          <p className="whitespace-pre-wrap">{content}</p>
-        </div>
-      </div>
-    );
-  };
+};
 
   if (!isApiKeySet) {
     return (
