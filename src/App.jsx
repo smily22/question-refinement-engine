@@ -470,9 +470,12 @@ const renderMessage = (message, index) => {
 
 if (hasProgressCheck) {
   try {
-    const parts = content.split('PROGRESS_CHECK');
-    if (!parts[1]) {
-      // Malformed - show as regular message
+    // Find the PROGRESS_CHECK section
+    const progressStartIndex = content.indexOf('PROGRESS_CHECK');
+    const progressEndIndex = content.indexOf('END_PROGRESS_CHECK');
+    
+    if (progressStartIndex === -1 || progressEndIndex === -1) {
+      // Tags found but incomplete - show as regular message
       return (
         <div key={index} className="flex justify-start">
           <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
@@ -482,28 +485,32 @@ if (hasProgressCheck) {
       );
     }
 
-    const reflection = parts[0].replace('REFLECTION:', '').trim();
-    const progressParts = parts[1].split('END_PROGRESS_CHECK');
-    
-    if (!progressParts[0] || !progressParts[1]) {
-      // Malformed - show as regular message
-      return (
-        <div key={index} className="flex justify-start">
-          <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
-            <p className="whitespace-pre-wrap">{content}</p>
-          </div>
-        </div>
-      );
-    }
+    // Extract sections
+    const beforeProgress = content.substring(0, progressStartIndex);
+    const progressContent = content.substring(
+      progressStartIndex + 'PROGRESS_CHECK'.length, 
+      progressEndIndex
+    );
+    const afterProgress = content.substring(progressEndIndex + 'END_PROGRESS_CHECK'.length);
 
-    const progressSection = progressParts[0];
-    const nextQuestion = progressParts[1].replace('NEXT_QUESTION:', '').trim();
-    
-    const optionsRaw = progressSection.match(/Option \d+: (.*?)(?=\n|$)/g);
-    const options = (optionsRaw || []).filter(opt => opt && opt.trim());
-    
+    // Parse reflection
+    const reflection = beforeProgress.replace('REFLECTION:', '').trim();
+
+    // Parse next question
+    const nextQuestion = afterProgress.replace('NEXT_QUESTION:', '').trim();
+
+    // Parse options - more flexible regex
+    const optionMatches = progressContent.match(/Option\s+\d+:\s*([^\n]+(?:\n(?!Option\s+\d+:)[^\n]+)*)/gi);
+    const options = optionMatches ? optionMatches.map(opt => {
+      return opt.replace(/Option\s+\d+:\s*/i, '').trim();
+    }).filter(opt => opt.length > 0) : [];
+
+    // Parse progress text
+    const progressMatch = progressContent.match(/Progress:\s*([^\n]+)/i);
+    const progressText = progressMatch ? progressMatch[1].trim() : '';
+
+    // If no options found, show as regular message
     if (options.length === 0) {
-      // No valid options - show as regular message
       return (
         <div key={index} className="flex justify-start">
           <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
@@ -512,9 +519,6 @@ if (hasProgressCheck) {
         </div>
       );
     }
-
-    const progressMatch = progressSection.match(/Progress: (.*?)(?=\n|$)/);
-    const progressText = progressMatch ? progressMatch[1] : '';
 
     return (
       <div key={index} className="space-y-3">
@@ -541,11 +545,7 @@ if (hasProgressCheck) {
             </div>
             
             <div className="space-y-3 mb-3">
-              {options.map((opt, optIdx) => {
-                if (!opt) return null;
-                const questionText = opt.replace(/Option \d+: /, '').trim();
-                if (!questionText) return null;
-                
+              {options.map((questionText, optIdx) => {
                 const feedbackKey = `${index}-${optIdx}`;
                 const currentFeedback = questionFeedback[feedbackKey];
                 
@@ -598,7 +598,6 @@ if (hasProgressCheck) {
       </div>
     );
   } catch (error) {
-    // If anything goes wrong, just show as regular message
     console.error('Error rendering progress check:', error);
     return (
       <div key={index} className="flex justify-start">
