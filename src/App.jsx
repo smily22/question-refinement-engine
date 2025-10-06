@@ -296,21 +296,28 @@ export default function QuestionRefinementEngine() {
   }
 };
 
-  const handleQuestionFeedback = (messageIndex, questionIndex, feedback) => {
-    const key = `${messageIndex}-${questionIndex}`;
-    setQuestionFeedback(prev => ({
-      ...prev,
-      [key]: feedback
-    }));
-    
-    sendToGoogleSheets({
-      type: 'question_feedback',
-      messageIndex,
-      questionIndex,
-      feedback,
-      timestamp: new Date().toISOString()
-    });
-  };
+  const handleQuestionFeedback = (messageIndex, questionIndex, feedback, questionText) => {
+  const key = `${messageIndex}-${questionIndex}`;
+  setQuestionFeedback(prev => ({
+    ...prev,
+    [key]: feedback
+  }));
+  
+  // Get the original problem (first user message)
+  const originalProblem = messages.length > 0 && messages[0].role === 'user' 
+    ? messages[0].content 
+    : '';
+  
+  sendToGoogleSheets({
+    type: 'question_feedback',
+    originalProblem: originalProblem,
+    questionText: questionText,
+    messageIndex,
+    questionIndex,
+    feedback,
+    timestamp: new Date().toISOString()
+  });
+};
 
   const extractQuestions = (messages) => {
     const questions = [];
