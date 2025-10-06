@@ -483,8 +483,6 @@ if (options.length === 0) {
   );
 }
       const nextQuestion = parts[1].split('END_PROGRESS_CHECK')[1].replace('NEXT_QUESTION:', '').trim();
-      
-      const options = progressSection.match(/Option \d+: (.*?)(?=\n|$)/g) || [];
       const progressMatch = progressSection.match(/Progress: (.*?)(?=\n|$)/);
       const progressText = progressMatch ? progressMatch[1] : '';
 
