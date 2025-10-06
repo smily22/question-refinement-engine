@@ -530,14 +530,7 @@ if (hasReflection || hasNextQuestion) {
         </div>
       )}
       
-      {nextQuestion && (
-        <div className="flex justify-start">
-          <div className="max-w-3xl rounded-2xl px-6 py-4 bg-indigo-50 text-gray-800 border border-indigo-200">
-            <p className="text-sm text-indigo-600 font-medium mb-1">❓ Question</p>
-            <p className="whitespace-pre-wrap">{nextQuestion}</p>
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 }
