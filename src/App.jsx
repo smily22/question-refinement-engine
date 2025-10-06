@@ -272,8 +272,22 @@ export default function QuestionRefinementEngine() {
   };
 
   const sendToGoogleSheets = async (data) => {
-    console.log('Feedback data:', data);
-  };
+  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxu5Htm334sLDSHbT-O0zCybIc1t0gckoobJ_0QL37S9Dd8EGZXVJNxwWPBRx3PF-4J/exec'; // Paste your URL here!
+  
+  try {
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
+    });
+    console.log('Feedback sent to Google Sheets');
+  } catch (error) {
+    console.error('Error sending to Google Sheets:', error);
+  }
+};
 
   const handleQuestionFeedback = (messageIndex, questionIndex, feedback) => {
     const key = `${messageIndex}-${questionIndex}`;
