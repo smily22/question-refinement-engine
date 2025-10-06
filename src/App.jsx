@@ -468,13 +468,51 @@ const renderMessage = (message, index) => {
   const hasProgressCheck = content.includes('PROGRESS_CHECK');
   const hasFinalFormulations = content.includes('FINAL_FORMULATIONS');
 
-  if (hasProgressCheck) {
+if (hasProgressCheck) {
+  try {
     const parts = content.split('PROGRESS_CHECK');
+    if (!parts[1]) {
+      // Malformed - show as regular message
+      return (
+        <div key={index} className="flex justify-start">
+          <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
+            <p className="whitespace-pre-wrap">{content}</p>
+          </div>
+        </div>
+      );
+    }
+
     const reflection = parts[0].replace('REFLECTION:', '').trim();
-    const progressSection = parts[1].split('END_PROGRESS_CHECK')[0];
-    const nextQuestion = parts[1].split('END_PROGRESS_CHECK')[1].replace('NEXT_QUESTION:', '').trim();
+    const progressParts = parts[1].split('END_PROGRESS_CHECK');
     
-    const options = progressSection.match(/Option \d+: (.*?)(?=\n|$)/g) || [];
+    if (!progressParts[0] || !progressParts[1]) {
+      // Malformed - show as regular message
+      return (
+        <div key={index} className="flex justify-start">
+          <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
+            <p className="whitespace-pre-wrap">{content}</p>
+          </div>
+        </div>
+      );
+    }
+
+    const progressSection = progressParts[0];
+    const nextQuestion = progressParts[1].replace('NEXT_QUESTION:', '').trim();
+    
+    const optionsRaw = progressSection.match(/Option \d+: (.*?)(?=\n|$)/g);
+    const options = (optionsRaw || []).filter(opt => opt && opt.trim());
+    
+    if (options.length === 0) {
+      // No valid options - show as regular message
+      return (
+        <div key={index} className="flex justify-start">
+          <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
+            <p className="whitespace-pre-wrap">{content}</p>
+          </div>
+        </div>
+      );
+    }
+
     const progressMatch = progressSection.match(/Progress: (.*?)(?=\n|$)/);
     const progressText = progressMatch ? progressMatch[1] : '';
 
@@ -504,7 +542,10 @@ const renderMessage = (message, index) => {
             
             <div className="space-y-3 mb-3">
               {options.map((opt, optIdx) => {
-                const questionText = opt.replace(/Option \d+: /, '');
+                if (!opt) return null;
+                const questionText = opt.replace(/Option \d+: /, '').trim();
+                if (!questionText) return null;
+                
                 const feedbackKey = `${index}-${optIdx}`;
                 const currentFeedback = questionFeedback[feedbackKey];
                 
@@ -556,7 +597,18 @@ const renderMessage = (message, index) => {
         )}
       </div>
     );
+  } catch (error) {
+    // If anything goes wrong, just show as regular message
+    console.error('Error rendering progress check:', error);
+    return (
+      <div key={index} className="flex justify-start">
+        <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
+          <p className="whitespace-pre-wrap">{content}</p>
+        </div>
+      </div>
+    );
   }
+}
 
   if (hasFinalFormulations) {
     const parts = content.split('FINAL_FORMULATIONS');
