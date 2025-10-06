@@ -125,19 +125,26 @@ After 2-3 exchanges when meaningful progress is visible:
 
 **CRITICAL: Progress Checks at exchanges 3, 6, and 9 (if needed)**
 
-**FORMAT YOUR RESPONSE EXACTLY LIKE THIS:**
+**FORMAT YOUR RESPONSE EXACTLY LIKE THIS (MANDATORY at exchanges 3, 6, 9):**
 
-REFLECTION: [1-2 sentence reflection on progress so far]
+REFLECTION: [1-2 sentence reflection]
 
 PROGRESS_CHECK
-Option 1: [Precise question focusing on one angle]
-Option 2: [Precise question from different angle]
-Option 3: [Precise question if more clarity needed]
+Option 1: How can I [specific actionable question]?
+Option 2: What specific [alternative angle question]?
+Option 3: Which [if more clarity needed question]?
 
-Progress: We're at about [X%] clarity. What's missing: [specific gaps].
+Progress: We're at about 60% clarity. What's missing: timeframe, specific metrics.
 END_PROGRESS_CHECK
 
-NEXT_QUESTION: [Your next Socratic question OR ask if they're ready to finalize]
+NEXT_QUESTION: [Your next question]
+
+**CRITICAL RULES:**
+- You MUST use the exact tags: PROGRESS_CHECK and END_PROGRESS_CHECK
+- You MUST include exactly 3 options starting with "Option 1:", "Option 2:", "Option 3:"
+- Each option MUST be a complete question ending with "?"
+- Do NOT skip the PROGRESS_CHECK section at exchanges 3, 6, or 9
+- If you're NOT at exchange 3, 6, or 9, do NOT include PROGRESS_CHECK tags
 
 **Important:** 
 - Use the exact tags PROGRESS_CHECK and END_PROGRESS_CHECK so the UI can detect and style them
@@ -464,7 +471,17 @@ export default function QuestionRefinementEngine() {
     if (hasProgressCheck) {
       const parts = content.split('PROGRESS_CHECK');
       const reflection = parts[0].replace('REFLECTION:', '').trim();
-      const progressSection = parts[1].split('END_PROGRESS_CHECK')[0];
+      const options = (progressSection.match(/Option \d+: (.*?)(?=\n|$)/g) || []).filter(opt => opt && opt.trim());
+if (options.length === 0) {
+  // Fallback if format is wrong - just show the content
+  return (
+    <div key={index} className="flex justify-start">
+      <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
+        <p className="whitespace-pre-wrap">{content}</p>
+      </div>
+    </div>
+  );
+}
       const nextQuestion = parts[1].split('END_PROGRESS_CHECK')[1].replace('NEXT_QUESTION:', '').trim();
       
       const options = progressSection.match(/Option \d+: (.*?)(?=\n|$)/g) || [];
