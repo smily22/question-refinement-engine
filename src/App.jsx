@@ -606,17 +606,30 @@ if (hasProgressCheck) {
 }
 
   if (hasFinalFormulations) {
+  try {
     const parts = content.split('FINAL_FORMULATIONS');
-    const reflection = parts[0].replace('REFLECTION:', '').trim();
-    const finalSection = parts[1].split('END_FINAL_FORMULATIONS')[0];
-    const closingQuestion = parts[1].split('END_FINAL_FORMULATIONS')[1].trim();
+    if (!parts[1]) {
+      // Malformed - show as regular message
+      return (
+        <div key={index} className="flex justify-start">
+          <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
+            <p className="whitespace-pre-wrap">{content}</p>
+          </div>
+        </div>
+      );
+    }
+
+    const reflection = parts[0] ? parts[0].replace('REFLECTION:', '').trim() : '';
+    
+    const endSplit = parts[1].split('END_FINAL_FORMULATIONS');
+    const finalSection = endSplit[0] || '';
+    const closingQuestion = endSplit[1] ? endSplit[1].trim() : '';
 
     return (
       <div key={index} className="space-y-3">
         {reflection && (
           <div className="flex justify-start">
             <div className="max-w-3xl rounded-2xl px-6 py-4 bg-purple-50 text-gray-800 border border-purple-200">
-              
               <p className="whitespace-pre-wrap">{reflection}</p>
             </div>
           </div>
@@ -647,7 +660,17 @@ if (hasProgressCheck) {
         )}
       </div>
     );
+  } catch (error) {
+    console.error('Error rendering final formulations:', error);
+    return (
+      <div key={index} className="flex justify-start">
+        <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
+          <p className="whitespace-pre-wrap">{content}</p>
+        </div>
+      </div>
+    );
   }
+}
 
   return (
     <div key={index} className="flex justify-start">
