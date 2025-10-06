@@ -340,27 +340,24 @@ export default function QuestionRefinementEngine() {
     const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 2048,
-          system: ENHANCED_SYSTEM_PROMPT,
-          messages: [
-            ...messages.map(msg => ({
-              role: msg.role,
-              content: msg.content
-            })),
-            { role: 'user', content: userMessage }
-          ]
-        }),
-        signal: controller.signal
-      });
+      const response = await fetch('/api/chat', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    apiKey: apiKey,
+    systemPrompt: ENHANCED_SYSTEM_PROMPT,
+    messages: [
+      ...messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      })),
+      { role: 'user', content: userMessage }
+    ]
+  }),
+  signal: controller.signal
+});
 
       clearTimeout(timeoutId);
 
