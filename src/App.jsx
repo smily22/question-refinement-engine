@@ -434,14 +434,19 @@ export default function QuestionRefinementEngine() {
   };
 
   const handleSubmitFeedback = () => {
-    sendToGoogleSheets({
-      type: 'final_feedback',
-      rating,
-      feedbackText,
-      totalExchanges: Math.floor(messages.length / 2),
-      questionFeedback,
-      timestamp: new Date().toISOString()
-    });
+  const originalProblem = messages.length > 0 && messages[0].role === 'user' 
+    ? messages[0].content 
+    : '';
+  
+  sendToGoogleSheets({
+    type: 'final_feedback',
+    originalProblem: originalProblem,
+    rating,
+    feedbackText,
+    totalExchanges: Math.floor(messages.length / 2),
+    questionFeedback,
+    timestamp: new Date().toISOString()
+  });
     
     setFeedbackSubmitted(true);
     setTimeout(() => {
@@ -561,7 +566,7 @@ if (hasProgressCheck) {
                     <p className="text-sm font-medium text-gray-900 mb-2">{questionText}</p>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleQuestionFeedback(index, optIdx, 'like')}
+                       onClick={() => handleQuestionFeedback(index, optIdx, 'like', questionText)}
                         className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm transition-colors ${
                           currentFeedback === 'like'
                             ? 'bg-green-100 text-green-700 border-2 border-green-500'
@@ -572,7 +577,7 @@ if (hasProgressCheck) {
                         Like
                       </button>
                       <button
-                        onClick={() => handleQuestionFeedback(index, optIdx, 'dislike')}
+                        onClick={() => handleQuestionFeedback(index, optIdx, 'dislike', questionText)}
                         className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm transition-colors ${
                           currentFeedback === 'dislike'
                             ? 'bg-red-100 text-red-700 border-2 border-red-500'
