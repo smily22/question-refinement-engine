@@ -482,94 +482,38 @@ const renderMessage = (message, index) => {
 
 if (hasProgressCheck) {
   try {
-    // Find the PROGRESS_CHECK section
     const progressStartIndex = content.indexOf('PROGRESS_CHECK');
     const progressEndIndex = content.indexOf('END_PROGRESS_CHECK');
     
     if (progressStartIndex === -1 || progressEndIndex === -1) {
-      // Parse regular messages for REFLECTION and NEXT_QUESTION
-const hasReflection = content.includes('REFLECTION:');
-const hasNextQuestion = content.includes('NEXT_QUESTION:');
-
-if (hasReflection || hasNextQuestion) {
-  let reflection = '';
-  let mainContent = content;
-  let nextQuestion = '';
-
-  if (hasReflection) {
-    const reflectionMatch = content.match(/REFLECTION:\s*([^\n]+(?:\n(?!NEXT_QUESTION:)[^\n]+)*)/i);
-    if (reflectionMatch) {
-      reflection = reflectionMatch[1].trim();
-      mainContent = content.replace(/REFLECTION:\s*[^\n]+(?:\n(?!NEXT_QUESTION:)[^\n]+)*/i, '').trim();
-    }
-  }
-
-  if (hasNextQuestion) {
-    const nextQuestionMatch = mainContent.match(/NEXT_QUESTION:\s*(.+)/is);
-    if (nextQuestionMatch) {
-      nextQuestion = nextQuestionMatch[1].trim();
-      mainContent = mainContent.replace(/NEXT_QUESTION:\s*.+/is, '').trim();
-    }
-  }
-
-  return (
-    <div key={index} className="space-y-3">
-      {reflection && (
-        <div className="flex justify-start">
-          <div className="max-w-3xl rounded-2xl px-6 py-4 bg-purple-50 text-gray-800 border border-purple-200">
-            <p className="whitespace-pre-wrap">{reflection}</p>
-          </div>
-        </div>
-      )}
-      
-      {mainContent && (
-        <div className="flex justify-start">
+      return (
+        <div key={index} className="flex justify-start">
           <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
-            <p className="whitespace-pre-wrap">{mainContent}</p>
+            <p className="whitespace-pre-wrap">{content}</p>
           </div>
         </div>
-      )}
-      
-      
-    </div>
-  );
-}
-
-// Completely plain message (no tags at all)
-return (
-  <div key={index} className="flex justify-start">
-    <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
-      <p className="whitespace-pre-wrap">{content}</p>
-    </div>
-  </div>
-);
+      );
     }
 
-    // Extract sections
     const beforeProgress = content.substring(0, progressStartIndex);
     const progressContent = content.substring(
       progressStartIndex + 'PROGRESS_CHECK'.length, 
       progressEndIndex
     );
-    const afterProgress = content.substring(progressEndIndex + 'END_PROGRESS_CHECK'.length);
 
-    // Parse reflection
-    const reflection = beforeProgress.replace('REFLECTION:', '').trim();
+    // Parse reflection (everything before PROGRESS_CHECK)
+    const reflection = beforeProgress ? beforeProgress.replace('REFLECTION:', '').trim() : '';
 
-    // Parse next question
-    const nextQuestion = afterProgress.replace('NEXT_QUESTION:', '').trim();
-
-    // Parse options - more flexible regex
+    // Parse options
     const optionMatches = progressContent.match(/Option\s+\d+:\s*([^\n]+(?:\n(?!Option\s+\d+:)[^\n]+)*)/gi);
     const options = optionMatches ? optionMatches.map(opt => {
       return opt.replace(/Option\s+\d+:\s*/i, '').trim();
-    }).filter(opt => opt.length > 0) : [];
+    }).filter(opt => opt && opt.length > 0) : [];
 
     // Parse progress text
     const progressMatch = progressContent.match(/Progress:\s*([^\n]+)/i);
     const progressText = progressMatch ? progressMatch[1].trim() : '';
 
-    // If no options found, show as regular message
     if (options.length === 0) {
       return (
         <div key={index} className="flex justify-start">
@@ -585,7 +529,6 @@ return (
         {reflection && (
           <div className="flex justify-start">
             <div className="max-w-3xl rounded-2xl px-6 py-4 bg-purple-50 text-gray-800 border border-purple-200">
-              
               <p className="whitespace-pre-wrap">{reflection}</p>
             </div>
           </div>
@@ -606,6 +549,8 @@ return (
             
             <div className="space-y-3 mb-3">
               {options.map((questionText, optIdx) => {
+                if (!questionText) return null;
+                
                 const feedbackKey = `${index}-${optIdx}`;
                 const currentFeedback = questionFeedback[feedbackKey];
                 
@@ -614,7 +559,7 @@ return (
                     <p className="text-sm font-medium text-gray-900 mb-2">{questionText}</p>
                     <div className="flex gap-2">
                       <button
-                       onClick={() => handleQuestionFeedback(index, optIdx, 'like', questionText)}
+                        onClick={() => handleQuestionFeedback(index, optIdx, 'like', questionText)}
                         className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm transition-colors ${
                           currentFeedback === 'like'
                             ? 'bg-green-100 text-green-700 border-2 border-green-500'
@@ -646,15 +591,6 @@ return (
             )}
           </div>
         </div>
-        
-        {nextQuestion && (
-          <div className="flex justify-start">
-            <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
-              <p className="text-sm text-indigo-600 font-medium mb-1">❓ Next Question</p>
-              <p className="whitespace-pre-wrap">{nextQuestion}</p>
-            </div>
-          </div>
-        )}
       </div>
     );
   } catch (error) {
