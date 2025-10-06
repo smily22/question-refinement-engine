@@ -199,7 +199,7 @@ Would you like to refine any of these further, or are you ready to work with the
 - **Be efficient:** Target 8-10 total exchanges maximum
 
 **Response Format:**
-1. Brief reflection demonstrating understanding (can use REFLECTION: tag for progress checks)
+1. Brief reflection demonstrating understanding (use REFLECTION: tag - this won't be shown to user, just helps with formatting)
 2. One targeted question from the most appropriate category
 3. [Internal tracking: question type, what you learned, conversation state, EXCHANGE COUNT]
 
@@ -487,14 +487,69 @@ if (hasProgressCheck) {
     const progressEndIndex = content.indexOf('END_PROGRESS_CHECK');
     
     if (progressStartIndex === -1 || progressEndIndex === -1) {
-      // Tags found but incomplete - show as regular message
-      return (
-        <div key={index} className="flex justify-start">
-          <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
-            <p className="whitespace-pre-wrap">{content}</p>
+      // Parse regular messages for REFLECTION and NEXT_QUESTION
+const hasReflection = content.includes('REFLECTION:');
+const hasNextQuestion = content.includes('NEXT_QUESTION:');
+
+if (hasReflection || hasNextQuestion) {
+  let reflection = '';
+  let mainContent = content;
+  let nextQuestion = '';
+
+  if (hasReflection) {
+    const reflectionMatch = content.match(/REFLECTION:\s*([^\n]+(?:\n(?!NEXT_QUESTION:)[^\n]+)*)/i);
+    if (reflectionMatch) {
+      reflection = reflectionMatch[1].trim();
+      mainContent = content.replace(/REFLECTION:\s*[^\n]+(?:\n(?!NEXT_QUESTION:)[^\n]+)*/i, '').trim();
+    }
+  }
+
+  if (hasNextQuestion) {
+    const nextQuestionMatch = mainContent.match(/NEXT_QUESTION:\s*(.+)/is);
+    if (nextQuestionMatch) {
+      nextQuestion = nextQuestionMatch[1].trim();
+      mainContent = mainContent.replace(/NEXT_QUESTION:\s*.+/is, '').trim();
+    }
+  }
+
+  return (
+    <div key={index} className="space-y-3">
+      {reflection && (
+        <div className="flex justify-start">
+          <div className="max-w-3xl rounded-2xl px-6 py-4 bg-purple-50 text-gray-800 border border-purple-200">
+            <p className="whitespace-pre-wrap">{reflection}</p>
           </div>
         </div>
-      );
+      )}
+      
+      {mainContent && (
+        <div className="flex justify-start">
+          <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
+            <p className="whitespace-pre-wrap">{mainContent}</p>
+          </div>
+        </div>
+      )}
+      
+      {nextQuestion && (
+        <div className="flex justify-start">
+          <div className="max-w-3xl rounded-2xl px-6 py-4 bg-indigo-50 text-gray-800 border border-indigo-200">
+            <p className="text-sm text-indigo-600 font-medium mb-1">❓ Question</p>
+            <p className="whitespace-pre-wrap">{nextQuestion}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Completely plain message (no tags at all)
+return (
+  <div key={index} className="flex justify-start">
+    <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
+      <p className="whitespace-pre-wrap">{content}</p>
+    </div>
+  </div>
+);
     }
 
     // Extract sections
@@ -537,7 +592,7 @@ if (hasProgressCheck) {
         {reflection && (
           <div className="flex justify-start">
             <div className="max-w-3xl rounded-2xl px-6 py-4 bg-purple-50 text-gray-800 border border-purple-200">
-              <p className="text-sm text-purple-900 font-medium mb-1">💭 Reflection</p>
+              
               <p className="whitespace-pre-wrap">{reflection}</p>
             </div>
           </div>
@@ -632,7 +687,7 @@ if (hasProgressCheck) {
         {reflection && (
           <div className="flex justify-start">
             <div className="max-w-3xl rounded-2xl px-6 py-4 bg-purple-50 text-gray-800 border border-purple-200">
-              <p className="text-sm text-purple-900 font-medium mb-1">💭 Reflection</p>
+              
               <p className="whitespace-pre-wrap">{reflection}</p>
             </div>
           </div>
