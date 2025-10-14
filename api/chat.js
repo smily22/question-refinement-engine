@@ -1,6 +1,18 @@
 // /api/chat.js - Secured Backend Proxy for Claude API
 
 export default async function handler(req, res) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+  // Handle preflight request
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -18,12 +30,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Get the request body from the frontend
-    const { messages, system } = req.body;
+    // FIXED: Get the correct parameter names from frontend
+    const { messages, systemPrompt } = req.body;
 
     // Validate the request
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Invalid request: messages array required' });
+    }
+
+    if (!systemPrompt) {
+      return res.status(400).json({ error: 'Invalid request: systemPrompt required' });
     }
 
     // Make the request to Anthropic API
@@ -37,8 +53,8 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4096,
-        messages: messages,
-        system: system
+        system: systemPrompt,  // FIXED: Use systemPrompt from frontend
+        messages: messages
       })
     });
 
