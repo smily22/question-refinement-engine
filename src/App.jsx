@@ -587,8 +587,69 @@ if (hasProgressCheck) {
             </div>
             
             {progressText && (
-              <p className="text-sm text-blue-800 italic">{progressText}</p>
-            )}
+  <p className="text-sm text-blue-800 italic mb-4">{progressText}</p>
+)}
+
+{/* Add completion button */}
+<div className="mt-4 pt-4 border-t border-blue-200">
+  <p className="text-sm text-gray-700 mb-3">Are these problem formulations satisfactory?</p>
+  <div className="flex gap-3">
+    <button
+      onClick={() => {
+        setInput("Let's continue refining");
+      }}
+      className="flex-1 bg-white text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-50 border-2 border-gray-300 transition-colors"
+    >
+      Need More Refinement
+    </button>
+    <button
+      onClick={handleEndSession}
+      className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+    >
+      I'm Done, Thank You
+    </button>
+  </div>
+</div>
+```
+
+---
+
+## 🔧 Fix 3: Update System Prompt
+
+Update the system prompt to use better labels and allow for continuation:
+
+Find `ENHANCED_SYSTEM_PROMPT` and update the final formulations section:
+
+**Find:**
+```
+FINAL_FORMULATIONS
+Primary Question: [Most actionable, complete version]
+
+Alternative Angle: [Different framing that might reveal new solutions]
+
+Next-Level Question: [What comes after solving the primary]
+```
+
+**Replace with:**
+```
+FINAL_FORMULATIONS
+Problem Option 1: [Most actionable, complete version]
+
+Problem Option 2: [Different framing that might reveal new solutions]
+
+Next-Level Problem: [What comes after solving the primary]
+```
+
+Also update the wording instruction:
+
+**Find:**
+```
+Offer final formulations using this EXACT format:
+```
+
+**Replace with:**
+```
+Offer refined problem formulations using this EXACT format:
           </div>
         </div>
       </div>
@@ -605,11 +666,10 @@ if (hasProgressCheck) {
   }
 }
 
-  if (hasFinalFormulations) {
+ if (hasFinalFormulations) {
   try {
     const parts = content.split('FINAL_FORMULATIONS');
     if (!parts[1]) {
-      // Malformed - show as regular message
       return (
         <div key={index} className="flex justify-start">
           <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
@@ -622,8 +682,15 @@ if (hasProgressCheck) {
     const reflection = parts[0] ? parts[0].replace('REFLECTION:', '').trim() : '';
     
     const endSplit = parts[1].split('END_FINAL_FORMULATIONS');
-    const finalSection = endSplit[0] || '';
-    const closingQuestion = endSplit[1] ? endSplit[1].trim() : '';
+    let finalSection = endSplit[0] || '';
+    
+    // Replace labels with more user-friendly versions
+    finalSection = finalSection
+      .replace(/Primary Question:/gi, 'Problem Option 1:')
+      .replace(/Alternative Angle:/gi, 'Problem Option 2:')
+      .replace(/Next-Level Question:/gi, 'Next-Level Problem:');
+    
+    const closingQuestion = endSplit[1] ? endSplit[1].replace(/END_/g, '').trim() : '';
 
     return (
       <div key={index} className="space-y-3">
@@ -638,7 +705,7 @@ if (hasProgressCheck) {
         <div className="flex justify-start">
           <div className="max-w-3xl rounded-2xl px-6 py-5 bg-gradient-to-r from-green-50 to-emerald-50 text-gray-800 border-2 border-green-400 shadow-md">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-bold text-green-900">✅ FINAL FORMULATIONS</p>
+              <p className="text-sm font-bold text-green-900">✅ REFINED PROBLEM FORMULATIONS</p>
               <button
                 onClick={() => setShowHistory(true)}
                 className="text-xs bg-green-600 text-white px-3 py-1 rounded-full hover:bg-green-700 flex items-center gap-1"
@@ -651,13 +718,29 @@ if (hasProgressCheck) {
           </div>
         </div>
         
-        {closingQuestion && (
-          <div className="flex justify-start">
-            <div className="max-w-3xl rounded-2xl px-6 py-4 bg-white text-gray-800 border border-gray-200 shadow-sm">
-              <p className="whitespace-pre-wrap">{closingQuestion}</p>
+        {/* Action buttons */}
+        <div className="flex justify-start">
+          <div className="max-w-3xl w-full bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-indigo-300 rounded-2xl p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-3">What would you like to do?</h3>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => {
+                  // Just continue the conversation normally
+                  setInput("I'd like to refine these further");
+                }}
+                className="flex-1 bg-white text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 border-2 border-gray-300 transition-colors"
+              >
+                Continue Refining
+              </button>
+              <button
+                onClick={handleEndSession}
+                className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+              >
+                I'm Done, Thank You
+              </button>
             </div>
           </div>
-        )}
+        </div>
       </div>
     );
   } catch (error) {
