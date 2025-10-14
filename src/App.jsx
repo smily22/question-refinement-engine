@@ -166,16 +166,16 @@ Continuously evaluate if the refined question meets these standards:
 
 **When 3/5 criteria are met (lowered from 4/5 to respect exchange limit):**
 
-Offer final formulations using this EXACT format:
+Offer refined problem formulations using this EXACT format:
 
 REFLECTION: [Brief celebration of the journey]
 
 FINAL_FORMULATIONS
-Primary Question: [Most actionable, complete version]
+Problem Option 1: [Most actionable, complete version]
 
-Alternative Angle: [Different framing that might reveal new solutions]
+Problem Option 2: [Different framing that might reveal new solutions]
 
-Next-Level Question: [What comes after solving the primary]
+Next-Level Problem: [What comes after solving the primary]
 
 This is actionable because:
 ✓ [Criterion 1 met]
@@ -610,46 +610,6 @@ if (hasProgressCheck) {
     </button>
   </div>
 </div>
-```
-
----
-
-## 🔧 Fix 3: Update System Prompt
-
-Update the system prompt to use better labels and allow for continuation:
-
-Find `ENHANCED_SYSTEM_PROMPT` and update the final formulations section:
-
-**Find:**
-```
-FINAL_FORMULATIONS
-Primary Question: [Most actionable, complete version]
-
-Alternative Angle: [Different framing that might reveal new solutions]
-
-Next-Level Question: [What comes after solving the primary]
-```
-
-**Replace with:**
-```
-FINAL_FORMULATIONS
-Problem Option 1: [Most actionable, complete version]
-
-Problem Option 2: [Different framing that might reveal new solutions]
-
-Next-Level Problem: [What comes after solving the primary]
-```
-
-Also update the wording instruction:
-
-**Find:**
-```
-Offer final formulations using this EXACT format:
-```
-
-**Replace with:**
-```
-Offer refined problem formulations using this EXACT format:
           </div>
         </div>
       </div>
