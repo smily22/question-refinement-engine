@@ -237,14 +237,7 @@ Would you like to refine any of these further, or are you ready to work with the
 Begin applying this enhanced methodology to all problem statements you receive.`;
 
 export default function QuestionRefinementEngine() {
-  const [apiKey, setApiKey] = useState(() => {
-    const saved = sessionStorage.getItem('qre_apiKey');
-    return saved || '';
-  });
-  const [isApiKeySet, setIsApiKeySet] = useState(() => {
-    const saved = sessionStorage.getItem('qre_apiKeySet');
-    return saved === 'true';
-  });
+  // REMOVED: apiKey and isApiKeySet state - no longer needed
   const [messages, setMessages] = useState(() => {
     const saved = sessionStorage.getItem('qre_messages');
     return saved ? JSON.parse(saved) : [];
@@ -266,20 +259,12 @@ export default function QuestionRefinementEngine() {
     }
   }, [messages]);
 
-  useEffect(() => {
-    sessionStorage.setItem('qre_apiKey', apiKey);
-    sessionStorage.setItem('qre_apiKeySet', isApiKeySet.toString());
-  }, [apiKey, isApiKeySet]);
+  // REMOVED: useEffect for saving apiKey - no longer needed
 
-  const handleSetApiKey = () => {
-    if (apiKey.trim()) {
-      setIsApiKeySet(true);
-      setError('');
-    }
-  };
+  // REMOVED: handleSetApiKey function - no longer needed
 
   const sendToGoogleSheets = async (data) => {
-  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxu5Htm334sLDSHbT-O0zCybIc1t0gckoobJ_0QL37S9Dd8EGZXVJNxwWPBRx3PF-4J/exec'; // Paste your URL here!
+  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxu5Htm334sLDSHbT-O0zCybIc1t0gckoobJ_0QL37S9Dd8EGZXVJNxwWPBRx3PF-4J/exec';
   
   try {
     await fetch(GOOGLE_SCRIPT_URL, {
@@ -303,7 +288,6 @@ export default function QuestionRefinementEngine() {
     [key]: feedback
   }));
   
-  // Get the original problem (first user message)
   const originalProblem = messages.length > 0 && messages[0].role === 'user' 
     ? messages[0].content 
     : '';
@@ -368,24 +352,24 @@ export default function QuestionRefinementEngine() {
     const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
+      // CHANGED: Removed apiKey from request body - backend will use environment variable
       const response = await fetch('/api/chat', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    apiKey: apiKey,
-    systemPrompt: ENHANCED_SYSTEM_PROMPT,
-    messages: [
-      ...messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      })),
-      { role: 'user', content: userMessage }
-    ]
-  }),
-  signal: controller.signal
-});
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          systemPrompt: ENHANCED_SYSTEM_PROMPT,
+          messages: [
+            ...messages.map(msg => ({
+              role: msg.role,
+              content: msg.content
+            })),
+            { role: 'user', content: userMessage }
+          ]
+        }),
+        signal: controller.signal
+      });
 
       clearTimeout(timeoutId);
 
@@ -404,7 +388,7 @@ export default function QuestionRefinementEngine() {
       if (err.name === 'AbortError') {
         setError('Request timed out. Please try again.');
       } else if (err.message.includes('401')) {
-        setError('Invalid API key. Please check your API key and try again.');
+        setError('API authentication error. Please contact the administrator.');
       } else if (err.message.includes('429')) {
         setError('Rate limit exceeded. Please wait a moment and try again.');
       } else if (err.message.includes('Failed to fetch')) {
@@ -457,11 +441,7 @@ export default function QuestionRefinementEngine() {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (isApiKeySet) {
-        handleSendMessage();
-      } else {
-        handleSetApiKey();
-      }
+      handleSendMessage(); // CHANGED: Always send message, no API key check needed
     }
   };
 
@@ -501,16 +481,13 @@ if (hasProgressCheck) {
       progressEndIndex
     );
 
-    // Parse reflection (everything before PROGRESS_CHECK)
     const reflection = beforeProgress ? beforeProgress.replace('REFLECTION:', '').trim() : '';
 
-    // Parse options
     const optionMatches = progressContent.match(/Option\s+\d+:\s*([^\n]+(?:\n(?!Option\s+\d+:)[^\n]+)*)/gi);
     const options = optionMatches ? optionMatches.map(opt => {
       return opt.replace(/Option\s+\d+:\s*/i, '').trim();
     }).filter(opt => opt && opt.length > 0) : [];
 
-    // Parse progress text
     const progressMatch = progressContent.match(/Progress:\s*([^\n]+)/i);
     const progressText = progressMatch ? progressMatch[1].trim() : '';
 
@@ -590,7 +567,6 @@ if (hasProgressCheck) {
   <p className="text-sm text-blue-800 italic mb-4">{progressText}</p>
 )}
 
-{/* Add completion button */}
 <div className="mt-4 pt-4 border-t border-blue-200">
   <p className="text-sm text-gray-700 mb-3">Are these problem formulations satisfactory?</p>
   <div className="flex gap-3">
@@ -644,7 +620,6 @@ if (hasProgressCheck) {
     const endSplit = parts[1].split('END_FINAL_FORMULATIONS');
     let finalSection = endSplit[0] || '';
     
-    // Replace labels with more user-friendly versions
     finalSection = finalSection
       .replace(/Primary Question:/gi, 'Problem Option 1:')
       .replace(/Alternative Angle:/gi, 'Problem Option 2:')
@@ -678,14 +653,12 @@ if (hasProgressCheck) {
           </div>
         </div>
         
-        {/* Action buttons */}
         <div className="flex justify-start">
           <div className="max-w-3xl w-full bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-indigo-300 rounded-2xl p-6">
             <h3 className="text-lg font-bold text-gray-800 mb-3">What would you like to do?</h3>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => {
-                  // Just continue the conversation normally
                   setInput("I'd like to refine these further");
                 }}
                 className="flex-1 bg-white text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 border-2 border-gray-300 transition-colors"
@@ -724,62 +697,7 @@ if (hasProgressCheck) {
   );
 };
 
-  if (!isApiKeySet) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full border border-indigo-100">
-          <div className="flex items-center justify-center mb-6">
-            <div className="bg-indigo-100 p-3 rounded-full">
-              <Sparkles className="w-8 h-8 text-indigo-600" />
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2 text-center">Question Refinement Engine</h1>
-          <p className="text-gray-600 mb-2 text-center text-sm">Transform vague problems into precise, actionable questions</p>
-          <p className="text-indigo-600 mb-6 text-center text-xs font-semibold">Enhanced v2.1 with Adaptive Intelligence</p>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Anthropic API Key
-              </label>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="sk-ant-..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-              />
-            </div>
-            
-            <button
-              onClick={handleSetApiKey}
-              disabled={!apiKey.trim()}
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              Start Refining Questions
-            </button>
-            
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
-              <p className="text-blue-800 font-medium mb-1">Need an API key?</p>
-              <p className="text-blue-700">Get one at <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="underline">console.anthropic.com</a></p>
-            </div>
-
-            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 text-sm">
-              <p className="text-indigo-800 font-semibold mb-2">What's New in v2.1:</p>
-              <ul className="text-indigo-700 space-y-1 text-xs">
-                <li>• Like/Dislike feedback on each question</li>
-                <li>• Visual progress checks every 3 exchanges</li>
-                <li>• Question history summary</li>
-                <li>• Target: 8-10 exchanges for efficiency</li>
-                <li>• Improved conversation persistence</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // REMOVED: API key entry screen - no longer needed, app starts directly
 
   if (showFeedback) {
     return (
@@ -964,16 +882,6 @@ if (hasProgressCheck) {
             >
               <RotateCcw className="w-4 h-4" />
               <span className="hidden sm:inline">Reset</span>
-            </button>
-            <button
-              onClick={() => {
-                setIsApiKeySet(false);
-                setMessages([]);
-                sessionStorage.clear();
-              }}
-              className="text-sm text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              Change Key
             </button>
           </div>
         </div>
