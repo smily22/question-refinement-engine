@@ -237,7 +237,6 @@ Would you like to refine any of these further, or are you ready to work with the
 Begin applying this enhanced methodology to all problem statements you receive.`;
 
 export default function QuestionRefinementEngine() {
-  // REMOVED: apiKey and isApiKeySet state - no longer needed
   const [messages, setMessages] = useState(() => {
     const saved = sessionStorage.getItem('qre_messages');
     return saved ? JSON.parse(saved) : [];
@@ -259,25 +258,30 @@ export default function QuestionRefinementEngine() {
     }
   }, [messages]);
 
-  // REMOVED: useEffect for saving apiKey - no longer needed
-
-  // REMOVED: handleSetApiKey function - no longer needed
-
   const sendToGoogleSheets = async (data) => {
   const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxu5Htm334sLDSHbT-O0zCybIc1t0gckoobJ_0QL37S9Dd8EGZXVJNxwWPBRx3PF-4J/exec';
   
+  console.log('📤 Sending to Google Sheets:', data);
+  
   try {
-    await fetch(GOOGLE_SCRIPT_URL, {
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
+      redirect: 'follow'
     });
-    console.log('Feedback sent to Google Sheets');
+    
+    if (!response.ok) {
+      console.error('❌ Google Sheets error:', response.status, response.statusText);
+      return;
+    }
+    
+    const result = await response.text();
+    console.log('✅ Feedback sent to Google Sheets:', result);
   } catch (error) {
-    console.error('Error sending to Google Sheets:', error);
+    console.error('❌ Error sending to Google Sheets:', error.message);
   }
 };
 
@@ -352,7 +356,6 @@ export default function QuestionRefinementEngine() {
     const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
-      // CHANGED: Removed apiKey from request body - backend will use environment variable
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -441,7 +444,7 @@ export default function QuestionRefinementEngine() {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage(); // CHANGED: Always send message, no API key check needed
+      handleSendMessage();
     }
   };
 
@@ -697,8 +700,6 @@ if (hasProgressCheck) {
   );
 };
 
-  // REMOVED: API key entry screen - no longer needed, app starts directly
-
   if (showFeedback) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -895,30 +896,52 @@ if (hasProgressCheck) {
                 <Sparkles className="w-8 h-8 text-indigo-600" />
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to v2.1!</h2>
-              <p className="text-gray-600 max-w-md mx-auto mb-6">Share a vague problem or challenge. I'll help you transform it into a precise, actionable question in under 10 exchanges.</p>
+              <p className="text-gray-600 max-w-lg mx-auto mb-4 text-base leading-relaxed">
+                Share a vague problem or challenge. Through thoughtful inquiry, I'll guide you to discover your own precise, actionable questions.
+              </p>
+              
+              <div className="max-w-2xl mx-auto bg-amber-50 rounded-xl border-2 border-amber-200 p-6 mb-6 text-left">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="bg-amber-100 p-2 rounded-full flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-800 mb-2 text-lg">This is Different from Typical AI</h3>
+                    <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                      I won't give you answers or solutions. Instead, I'll ask you questions that help you discover your own clarity. This is the ancient art of <strong>Socratic inquiry</strong> — the belief that the wisdom you seek already lives within you.
+                    </p>
+                    <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                      <strong>My role:</strong> To illuminate what you already know but haven't yet articulated. Through careful questions, we'll transform confusion into clarity.
+                    </p>
+                    <p className="text-amber-800 text-sm italic font-medium">
+                      Trust your knowledge. Trust your wisdom. The answers are already there — let's uncover them together.
+                    </p>
+                  </div>
+                </div>
+              </div>
               
               <div className="max-w-2xl mx-auto bg-white rounded-xl border border-indigo-100 p-6 text-left">
-                <h3 className="font-semibold text-gray-800 mb-3">Enhanced Features:</h3>
+                <h3 className="font-semibold text-gray-800 mb-3">How This Works:</h3>
                 <div className="space-y-2 text-sm text-gray-700">
                   <div className="flex items-start gap-2">
                     <span className="text-indigo-600 font-bold">•</span>
-                    <span><strong>Like/Dislike Buttons:</strong> Rate each suggested question</span>
+                    <span><strong>Self-Inquiry Process:</strong> I ask, you reflect, clarity emerges (typically 8-10 exchanges)</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-indigo-600 font-bold">•</span>
-                    <span><strong>Visual Progress Checks:</strong> Every 3 exchanges with color-coded sections</span>
+                    <span><strong>Rate Each Question:</strong> Like/dislike buttons help me refine my approach</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-indigo-600 font-bold">•</span>
-                    <span><strong>Question History:</strong> View all suggested questions anytime</span>
+                    <span><strong>Progress Checks:</strong> Visual summaries every 3 exchanges to track your clarity</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-indigo-600 font-bold">•</span>
-                    <span><strong>Efficient Process:</strong> Target 8-10 exchanges maximum</span>
+                    <span><strong>Your Pace:</strong> Take your time with each response — deep reflection creates better questions</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-indigo-600 font-bold">•</span>
-                    <span><strong>Conversation Persistence:</strong> Your session survives page refreshes</span>
+                    <span><strong>Question History:</strong> Review all suggested questions anytime during your session</span>
                   </div>
                 </div>
               </div>
